@@ -1,0 +1,6 @@
+apiVersion: v2
+description: Demo
+name: demo
+version: 0.0.1
+maintainers:
+  - name: Luke Hopkins
