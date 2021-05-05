@@ -4,8 +4,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ .name }}
+  annotations:
+{{ .annotations | indent 4 }}
   labels:
-    app: {{ .name }}
+{{ .labels | indent 4 }}
 spec:
   selector:
     selector: {{ .selector }}

@@ -1,4 +1,4 @@
-{{ define "common.kubernetes.podspec" }}
+{{- define "common.kubernetes.podspec" }}
 {{- $global := .global }}
 imagePullSecrets:
   - name: {{ default "foobar" .pod.imagePullSecretsName }}
@@ -21,6 +21,9 @@ affinity:
             - {{ .selector }}
         topologyKey: failure-domain.beta.kubernetes.io/zone
 {{- end }}
+{{- with .pod.tolerations }}
+tolerations:
+{{- toYaml . | indent 2 }}{{- end }}
 restartPolicy: {{ default "Always" .pod.restartPolicy }}
 {{- with .pod.initContainers }}
 initContainers:
@@ -44,7 +47,7 @@ containers:
 {{- $probe := required "You must define a livenessProbe" $v.livenessProbe }}
 {{- if not $probe.disabled }}
 {{- if (or (hasKey $probe "tcpSocket") (or (hasKey $probe "exec") (hasKey $probe "httpGet")))}}
-{{- with $v.livenessProbe }}
+{{- with $probe }}
   livenessProbe:
     initialDelaySeconds: {{ default 0 .initialDelaySeconds }}
     periodSeconds: {{ default 5 .periodSeconds }}
@@ -64,7 +67,9 @@ containers:
 {{- else }}{{- fail "\n\nERROR: You must define a livenessProbe. To disabled set:\n\n        livenessProbe:\n          disabled: true" }}
 {{- end -}}
 {{- end -}}
-{{- if (kindIs "map" $v.readinessProbe) }}
+{{- $probe := required "You must define a readinessProbe" $v.readinessProbe }}
+{{- if not $probe.disabled }}
+{{- if (or (hasKey $probe "tcpSocket") (or (hasKey $probe "exec") (hasKey $probe "httpGet")))}}
 {{- with $v.readinessProbe }}
   readinessProbe:
     initialDelaySeconds: {{ default 0 .initialDelaySeconds }}
@@ -82,8 +87,8 @@ containers:
     httpGet:
 {{ toYaml . | indent 6 }}{{- end }}
 {{- end -}}
-{{- else if not (kindIs "string" $v.readinessProbe) }}
-{{- fail "\n\nERROR: You must define a readinessProbe\nSet to 'disabled' to disable fully" }}
+{{- else }}{{- fail "\n\nERROR: You must define a readinessProbe. To disabled set:\n\n        readinessProbe:\n          disabled: true" }}
+{{- end -}}
 {{- end -}}
 {{ $resourcesError := printf "\n\nERROR: You must specify resources for container [%v]. e.g.\nresources:\n  limits:\n    memory: 100Mi\n  requests:\n    cpu: 30m\n    memory: 200Mi\n" $k }}
 {{- $resources := required $resourcesError $v.resources }}

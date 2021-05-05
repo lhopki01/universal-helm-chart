@@ -10,14 +10,14 @@ global:
     global: labels
 
 deployments:
-  near-indexer:
+  nginx:
     service:
-      type: LoadBalancer
+      type: ClusterIP
       ports:
         http:
           port: 80
           protocol: TCP
-          targetPort: 8080
+          targetPort: 80
     annotations:
       foo.bar.net: "foobar"
       foo.bar.com: "override"
@@ -25,35 +25,27 @@ deployments:
       deployment: labels
     replicas: 3
     containers:
-      todo-app:
-        image: lhopki01/todo-app:0.1.0
+      nginx:
+        image: nginx
         env:
           PG_USERNAME: todo
-          PG_PASSWORD:
-            valueFrom:
-              secretKeyRef:
-                name: todo-app
-                key: TODO_PASSWORD
           PG_DATABASE: todo
           PG_HOST: postgres-primary
           PG_PORT: "5432"
         readinessProbe:
           httpGet:
-            path: /healthcheck/readiness
-            port: 8080
+            path: /
+            port: 80
         livenessProbe:
-          disabled: true
-          #httpGet:
-          #  path: /healthcheck/liveness
-          #  port: 8080
+          httpGet:
+            path: /
+            port: 80
         resources:
           requests:
            memory: 1Gi
-           cpu: 200Mi
+           cpu: "0.1"
           limits:
             memory: 2Gi
-        securityContext:
-          runAsNonRoot: false
 
 files:
   foo.conf: json://path/to/file
